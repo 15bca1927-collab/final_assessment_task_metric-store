@@ -1,0 +1,41 @@
+model:
+  name: balance_metrics
+  source_table: fct_daily_balances
+  primary_key: [balance_date, account_id]
+  
+  dimensions:
+    - name: balance_date
+      type: time
+      expr: balance_date
+    - name: account_id
+      type: categorical
+      expr: balance_date
+
+  joins:
+    - target: dim_accounts
+      type: inner
+      on_condition: "fct_daily_balances.account_id = dim_accounts.account_id"
+      exposed_dimensions:
+        - name: advisor_id
+          expr: dim_accounts.advisor_id
+        - name: client_tier
+          expr: dim_accounts.client_tier
+
+  metrics:
+    - name: total_aum
+      description: "Total Assets Under Management across selected accounts"
+      type: sum
+      expr: "aum_usd"
+      format: currency
+
+    - name: average_account_aum
+      description: "Average AUM per account balance entry"
+      type: avg
+      expr: "aum_usd"
+      format: currency
+
+    - name: total_cash_held
+      description: "Total uninvested cash held in client accounts"
+      type: sum
+      expr: "cash_usd"
+      format: currency

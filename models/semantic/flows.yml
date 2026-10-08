@@ -1,0 +1,47 @@
+model:
+  name: transaction_metrics
+  source_table: fct_transactions
+  primary_key: [transaction_id]
+  
+  dimensions:
+    - name: transaction_date
+      type: time
+      expr: transaction_date
+    - name: tx_type
+      type: categorical
+      expr: tx_type
+
+  joins:
+    - target: dim_accounts
+      type: inner
+      on_condition: "fct_transactions.account_id = dim_accounts.account_id"
+      exposed_dimensions:
+        - name: advisor_id
+          expr: dim_accounts.advisor_id
+        - name: client_tier
+          expr: dim_accounts.client_tier
+
+  metrics:
+    - name: gross_deposits
+      description: "Total new cash deposits"
+      type: custom
+      sql: "SUM(CASE WHEN tx_type = 'DEPOSIT' THEN amount_usd ELSE 0 END)"
+      format: currency
+
+    - name: gross_withdrawals
+      description: "Total client withdrawals"
+      type: custom
+      sql: "SUM(CASE WHEN tx_type = 'WITHDRAWAL' THEN amount_usd ELSE 0 END)"
+      format: currency
+
+    - name: net_new_money
+      description: "Net cash flows (Deposits minus Withdrawals)"
+      type: custom
+      sql: "SUM(CASE WHEN tx_type = 'DEPOSIT' THEN amount_usd WHEN tx_type = 'WITHDRAWAL' THEN -amount_usd ELSE 0 END)"
+      format: currency
+
+    - name: total_fees_collected
+      description: "Management and advisory fees captured"
+      type: custom
+      sql: "SUM(CASE WHEN tx_type = 'FEE' THEN amount_usd ELSE 0 END)"
+      format: currency
